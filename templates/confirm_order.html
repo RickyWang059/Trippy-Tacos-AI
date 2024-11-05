@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirm Your Order</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; }
+        .order-summary { display: inline-block; text-align: left; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px 12px; border-bottom: 1px solid #ddd; }
+        .button { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #4CAF50; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        .button:hover { background-color: #45a049; }
+        .back-button { background-color: #f44336; margin-right: 10px; }
+        .back-button:hover { background-color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <div class="order-summary">
+        <h1>Confirm Your Order</h1>
+        <table>
+            {% for item in order_data %}
+            <tr>
+                <td><strong>{{ item.label }}</strong></td>
+                <td>{{ item.value }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <!-- 重新修改訂單的按鈕 -->
+        <button class="button back-button" onclick="history.back()">Go Back</button>
+        <!-- 確認送出訂單的按鈕 -->
+        <form action="{{ url_for('finalize_order') }}" method="POST" style="display: inline;">
+            <button type="submit" class="button">Submit Order</button>
+        </form>
+    </div>
+</body>
+</html>

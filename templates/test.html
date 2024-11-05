@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Tool</title>
+    <style>
+      body {
+        background: url("{{ url_for('static', filename='background.png') }}") no-repeat center center fixed;
+        background-size: cover;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .faq-icon {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-content {
+        background-color: #fdf1dc;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        height: 50%;
+        max-width: 600px;
+      }
+        
+
+        
+      .close-btn {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      
+      .close-btn:hover {
+        color: black;
+      }
+
+      .faq-question {
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #ddd;
+        color: #333;
+      }
+
+      .faq-answer {
+        display: none;
+        padding: 10px 0;
+        font-size: 16px;
+        color: #555;
+      }
+
+      .faq-question.active {
+        color: #008f39;
+      }
+
+      .faq-arrow {
+        font-size: 24px;
+        transition: transform 0.3s;
+      }
+
+      .faq-question.active .faq-arrow {
+        transform: rotate(180deg);
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+</head>
+<body>
+
+<!-- 主模態視窗 -->
+<div id="mainModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('mainModal')">&times;</span>
+        
+        <h2 style="text-align: center; margin-bottom: 20px;">Select your Question</h2>
+        
+        <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+            <button onclick="showSubOptions('faqOptions')" style="padding: 15px 30px; font-size: 18px;">FAQ</button>
+            <button onclick="openModal('orderModal')" style="padding: 15px 30px; font-size: 18px;">Order Question</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- FAQ 子選單模態視窗 -->
+<div id="faqOptions" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('faqOptions')">&times;</span>
+        
+        <h2 style="text-align: center; margin-bottom: 20px;">Select FAQ Type</h2>
+        
+        <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+            <button onclick="loadFaq('FOOD TRUCK')" style="padding: 15px 30px; font-size: 18px;">Food Truck</button>
+            <button onclick="loadFaq('CATERING')" style="padding: 15px 30px; font-size: 18px;">Catering</button>
+        </div>
+        
+        <div style="text-align: center; margin-top: auto;">
+            <button onclick="closeModal('faqOptions'); openModal('mainModal');" style="padding: 10px 20px; font-size: 16px">
+                Back
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- FAQ 顯示模態視窗 -->
+<div id="faqModal" class="modal hidden">
+    <div class="modal-content" style="display: flex; flex-direction: column; height: 50vh; max-width: 600px; padding: 20px; overflow: hidden; position: relative;">
+        <span class="close-btn" onclick="closeModal('faqModal')" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;">&times;</span>
+        
+        <h2 style="text-align: center; margin: 10px 0 20px 0;">FAQs</h2>
+        
+        <div id="faq-section" style="flex-grow: 1; overflow-y: auto; padding-right: 10px; margin-bottom: 20px;">
+            <!-- FAQ 資料會插入此區域 -->
+        </div>
+        
+        <div style="text-align: center;">
+            <p style="margin: 0; font-size: 14px;">Other questions? Please contact us at info@trippytacos240.com</p>
+            <button onclick="closeModal('faqModal'); openModal('faqOptions');" style="margin-top: 10px; padding: 10px 20px; font-size: 16px;">
+                Back
+            </button>
+        </div>
+    </div>
+</div>
+<!-- Order Question 模態視窗 -->
+<div id="orderModal" class="modal hidden">
+    <div class="modal-content" style="overflow-y: auto; max-height: 80vh;">
+        <span class="close-btn" onclick="closeModal('orderModal')">&times;</span>
+        
+        <h2 style="text-align: center; margin-bottom: 20px;">Event Details Questionnaire</h2>
+
+        <form action="/submit_order_questionnaire" method="post" style="padding: 0 20px;" id="questionnaireForm">
+
+            <!-- 顧客資訊 -->
+            <div class="page" id="page-1">
+                <h3>Personal Information</h3>
+                <label>Name</label>
+                <input type="text" name="name" required>
+                <br><br>
+                <label>Phone Number</label>
+                <input type="text" name="phone" required>
+                <br><br>
+                <label>Email Address</label>
+                <input type="text" name="email" required>
+                <br><br>
+            </div>
+
+            <!-- 基本活動資訊 -->
+            <div class="page hidden" id="page-2">
+                <h3>Basic Event Information</h3>
+                <label>What is the date and time of your events?</label>
+                <input type="datetime-local" name="event_date_time" required>
+                <br><br>
+                <label>How long is the duration of the event?</label>
+                <input type="text" name="event_duration" required>
+                <br><br>
+                <label>What is your budget?</label>
+                <input type="text" name="budget" required>
+                <br><br>
+                <label>Is your event public or private?</label>
+                <select name="event_type" required>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                </select>
+                <br><br>
+                <label>Is this an indoor or an outdoor event?</label>
+                <select name="event_location" required>
+                    <option value="indoor">Indoor</option>
+                    <option value="outdoor">Outdoor</option>
+                </select>
+            </div>
+
+            <!-- 活動結束時間與電力 -->
+            <div class="page hidden" id="page-3">
+                <h3>Event End Time and Power</h3>
+                <label>What time will this event end?</label>
+                <input type="time" name="event_end_time" required>
+                <br><br>
+                <label>Will there be power hookups for our food truck?</label>
+                <select name="power_hookup" required>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        
+            <!-- 其他餐飲安排 -->
+            <div class="page hidden" id="page-4">
+                <h3>Additional Food Arrangements</h3>
+                <label>Will you have any other food vendors or food options? If so, how many?</label>
+                <input type="number" name="other_food_vendors">
+                <br><br>
+                <label>How many other savory food vendors will you have?</label>
+                <input type="number" name="savory_vendors_count">
+                <br><br>
+                <label>What cuisine are the other food trucks?</label>
+                <input type="text" name="other_food_cuisines">
+            </div>
+
+            <!-- 支付方式 -->
+            <div class="page hidden" id="page-5">
+                <h3>Payment Method</h3>
+                <label>Is everyone paying individually, or will you pay for everyone?</label>
+                <select name="payment_method" required>
+                    <option value="individual">Individual</option>
+                    <option value="everyone">Pay for Everyone</option>
+                </select>
+            </div>
+
+            <!-- 按鈕區域 -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="button" onclick="prevPage()" id="prevBtn" style="padding: 10px 20px; font-size: 16px; display: none;">Previous</button>
+                <button type="button" onclick="nextPage()" id="nextBtn" style="padding: 10px 20px; font-size: 16px;">Next</button>
+            </div>
+            <!-- 感謝訊息區域（默認隱藏） -->
+            <div id="thankYouMessage" style="display: none; text-align: center;">
+            <h2>Thank you for your order!</h2>
+            <p>Your order has been received and is being processed.</p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<img src="{{ url_for('static', filename='faq-icon.jpg') }}" class="faq-icon" onclick="openModal('mainModal')" alt="FAQ Icon">
+<script>
+let currentPage = 1;
+const totalPages = 5;
+
+function showPage(pageNum) {
+    for (let i = 1; i <= totalPages; i++) {
+        document.getElementById(`page-${i}`).classList.add("hidden");
+    }
+    document.getElementById(`page-${pageNum}`).classList.remove("hidden");
+
+    document.getElementById("prevBtn").style.display = pageNum === 1 ? "none" : "inline-block";
+    document.getElementById("nextBtn").innerText = pageNum === totalPages ? "Check Out" : "Next";
+}
+
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        showPage(currentPage);
+    } else {
+        document.getElementById("questionnaireForm").submit();
+    }
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+    }
+}
+
+// 初始化頁面
+showPage(currentPage);
+
+</script>
+<script>
+function handleSubmit(event) {
+    event.preventDefault(); // 阻止表單默認提交行為
+
+    // 提交表單
+    fetch("/submit_order_questionnaire", {
+        method: "POST",
+        body: new FormData(document.getElementById("questionnaireForm"))
+    }).then(response => {
+        if (response.ok) {
+            // 觸發文件下載
+            downloadFile();
+
+            // 延遲顯示感謝訊息，確保下載操作完成
+            setTimeout(() => {
+                document.getElementById("questionnaireForm").style.display = "none";
+                document.getElementById("thankYouMessage").style.display = "block";
+            }, 1000); // 延遲 1 秒後顯示感謝訊息
+        } else {
+            alert("There was an issue submitting the form. Please try again.");
+        }
+    }).catch(error => {
+        console.error("Error:", error);
+        alert("There was an error submitting the form. Please try again.");
+    });
+}
+
+// 單獨的文件下載函數
+function downloadFile() {
+    const link = document.createElement("a");
+    link.href = "/download_excel";
+    link.download = "event_details.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+</script>
+
+
+<script>
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = "block";
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+    }
+
+    function showSubOptions(subModalId) {
+        closeModal('mainModal');
+        openModal(subModalId);
+    }
+
+    function loadFaq(faqType) {
+    fetch(`/get_faq/${faqType}`)
+        .then(response => response.json())
+        .then(data => {
+            const faqSection = document.getElementById("faq-section");
+            faqSection.innerHTML = "";
+            data.forEach(item => {
+                const questionContainer = document.createElement("div");
+                questionContainer.className = "faq-item";
+
+                const questionElement = document.createElement("div");
+                questionElement.className = "faq-question";
+                questionElement.onclick = () => toggleAnswer(questionElement);
+                questionElement.innerHTML = `<span>${item.question}</span><span class="faq-arrow">&#9660;</span>`;
+
+                const answerElement = document.createElement("div");
+                answerElement.className = "faq-answer";
+                answerElement.style.display = "none"; // 確保初始化為隱藏
+                answerElement.textContent = item.answer;
+
+                questionContainer.appendChild(questionElement);
+                questionContainer.appendChild(answerElement);
+                faqSection.appendChild(questionContainer);
+            });
+            closeModal('faqOptions');
+            openModal('faqModal');
+        })
+        .catch(error => console.error('Error loading FAQ:', error));
+}
+
+function toggleAnswer(element) {
+    const answer = element.nextElementSibling;
+    const isAnswerVisible = answer.style.display === "block";
+
+    // 明確設置顯示或隱藏的邏輯
+    answer.style.display = isAnswerVisible ? "none" : "block";
+    element.classList.toggle("active", !isAnswerVisible);
+}
+
+
+    window.onclick = function(event) {
+        const mainModal = document.getElementById("mainModal");
+        const faqOptions = document.getElementById("faqOptions");
+        const faqModal = document.getElementById("faqModal");
+        if (event.target == mainModal) mainModal.style.display = "none";
+        if (event.target == faqOptions) faqOptions.style.display = "none";
+        if (event.target == faqModal) faqModal.style.display = "none";
+    }
+</script>
+</body>
+</html>
+
